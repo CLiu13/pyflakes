@@ -1750,9 +1750,22 @@ class TestUnusedAssignment(TestCase):
     def test_f_string(self):
         """Test PEP 498 f-strings are treated as a usage."""
         self.flakes('''
-        baz = 0
-        print(f'\x7b4*baz\N{RIGHT CURLY BRACKET}')
-        ''')
+            baz = 0
+            print(f'\x7b4*baz\N{RIGHT CURLY BRACKET}')
+            ''')
+
+    @skipIf(version_info < (3, 6), 'new in Python 3.6')
+    def test_f_string_line_number(self):
+        """Test if the the correct line number is displayed for unused f-strings."""
+        exc = self.flakes('''
+            def a():
+                f"\N{LEFT CURLY BRACKET}b\N{RIGHT CURLY BRACKET}"
+            ''', m.UndefinedName).messages[0]
+
+        # Expected line is 3 (instead of 2) due to line break from formatting
+        expected_line_num = 3
+
+        self.assertEqual(exc.message_args, ('b', expected_line_num))
 
 
 class TestAsyncStatements(TestCase):
